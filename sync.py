@@ -1,13 +1,11 @@
 import simplenote
+# import itertools
 import json
 import os
 
 # Authenticate
 credentials = os.popen("pass simplesync").read().splitlines()
-password = credentials[0]
-user = credentials[1]
-
-sn = simplenote.Simplenote(user, password)
+sn = simplenote.Simplenote(credentials[1], credentials[0]) # username and psw
 
 # Get remote notes 
 remote_index = sn.get_note_list()[0]
@@ -18,16 +16,21 @@ with open("index.json", "r") as out_file:
     local_index = json.load(out_file)
 
 # TODO
+# Iterate over remote index
 # Check for updates if remote version > local version
 # Create new file if not present
-
-# Update local notes
 update_index = []
-for file in remote_index:
+for note in remote_index:
+    if [x for x in local_index if x["key"] == note["key"]]:
+        print("Check the version on this one {}".format(note["key"]))
+    else:
+        # Create the note otherwise
+        print("Gotta create this one")
+
     update_index.append({
-            "key": file["key"],
-            "title": file["content"].partition('\n')[0].replace('#','').lstrip()+".md",
-            "version": str(file["version"])
+        "key": note["key"],
+        "title": note["content"].partition('\n')[0].replace('#','').lstrip()+".md",
+        "version": str(note["version"])
     })
 
 with open("index.json", "w") as out_file:
