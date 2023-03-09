@@ -1,2 +1,4 @@
 *.json
 *.pdf
+*.pyc
+__pycache__
