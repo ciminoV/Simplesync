@@ -1,3 +1,4 @@
+from copy import deepcopy
 import simplenote
 import json
 import os
@@ -29,13 +30,13 @@ def remote_sync(local_index, sn):
         if update_index:
             duplicate = [x for x in update_index if title in x["title"]]
 
-            if not duplicate:
-                num = ""
-            else:
+            num = ""
+            if duplicate:
                 num = "(%i)" % (len(duplicate))
 
             title = title + "%s" % num
 
+        # Add or update notes
         update_note = [x for x in local_index if x["key"] == key]
         if not update_note or int(update_note[0]["version"]) < version:
             with open(PATH + title, "w") as out_file:
@@ -44,14 +45,20 @@ def remote_sync(local_index, sn):
         update_index.append({"key": key, "title": title, "version": str(version)})
 
     # Check for deleted remote notes
+    local_copy = deepcopy(local_index)
+    for x in local_copy: x.pop("version")
+    update_copy = deepcopy(update_index)
+    for x in update_copy: x.pop("version")
+
     delete_note = [
         i
-        for i in local_index + update_index
-        if i not in local_index or i not in update_index
+        for i in local_copy + update_copy
+        if i in local_copy and i not in update_copy
     ]
     for delete in delete_note:
         os.remove(PATH + delete["title"])
 
+    # Update the index of local notes
     with open("./index.json", "w") as out_file:
         json.dump(update_index, out_file, indent=1)
 
@@ -59,7 +66,7 @@ def remote_sync(local_index, sn):
 if __name__ == "__main__":
     sn = authenticate()
 
-    # Open local notes
+    # Open the index of local notes
     with open("./index.json", "r") as out_file:
         local = json.load(out_file)
 
